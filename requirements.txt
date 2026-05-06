@@ -1,0 +1,14 @@
+# Persona-generator engine (verbatim from the reference repo)
+anthropic>=0.40.0
+python-dotenv>=1.0.0
+fastapi>=0.100.0
+openai>=1.50.0
+openpyxl>=3.1.0
+pydantic>=2.0.0
+sentence-transformers>=3.0.0
+uvicorn>=0.20.0
+
+# Sycamore additions
+httpx>=0.27.0
+tenacity>=8.2.0
+rich>=13.7.0      # optional, used by the CLI for nicer logging

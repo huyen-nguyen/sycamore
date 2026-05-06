@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sycamore · synthetic persona session viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4efe6;
+      --paper-2: #ece5d6;
+      --paper-3: #ddd3bd;
+      --ink: #1f261e;
+      --ink-soft: #4a4f43;
+      --ink-mute: #807a6a;
+      --rule: #c9bfa6;
+      --sage: #4d6a4a;
+      --sage-deep: #2f4730;
+      --rust: #b04b1a;
+      --rust-soft: #d2895c;
+      --gold: #b08838;
+      --crisis: #802a2a;
+      --shadow: 0 1px 0 rgba(31,38,30,.06), 0 8px 32px -16px rgba(31,38,30,.18);
+      --mono: 'Consolas', 'Menlo', 'Monaco', ui-monospace, monospace;
+      --sans: 'Source Sans 3', 'Source Sans Pro', 'Avenir Next', 'Avenir', system-ui, sans-serif;
+      --serif: 'Source Sans 3', 'Source Sans Pro', 'Avenir Next', 'Avenir', Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: var(--sans);
+      font-size: 15.5px;
+      color: var(--ink);
+      background: var(--paper);
+      background-image:
+              radial-gradient(rgba(31,38,30,.025) 1px, transparent 1px),
+              radial-gradient(rgba(31,38,30,.02) 1px, transparent 1px);
+      background-size: 14px 14px, 28px 28px;
+      background-position: 0 0, 7px 7px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--rust); }
+
+    /* Layout */
+    .app {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      background: var(--paper-2);
+      border-right: 1px solid var(--rule);
+      padding: 28px 24px 24px;
+      position: sticky; top: 0; align-self: start;
+      height: 100vh; overflow-y: auto;
+    }
+    .main {
+      padding: 36px clamp(24px, 4vw, 56px) 96px;
+      max-width: 1200px;
+    }
+
+    /* Sidebar */
+    .brand {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 40px;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      margin: 0 0 6px;
+    }
+    .brand em {
+      font-style: italic; color: var(--sage-deep);
+    }
+    .brand-sub {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-mute);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 6px;
+    }
+    .field select, .field input {
+      width: 100%;
+      padding: 9px 10px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      font-family: var(--mono);
+      font-size: 14.5px;
+      color: var(--ink);
+    }
+    .field select:focus, .field input:focus {
+      outline: none;
+      border-color: var(--sage);
+      box-shadow: 0 0 0 3px rgba(77,106,74,0.15);
+    }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .start-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--sage-deep);
+      color: var(--paper);
+      border: none;
+      border-radius: 2px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 14.5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .start-btn:hover:not(:disabled) { background: #1f3320; }
+    .start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .start-btn.stop { background: var(--crisis); }
+
+    .status {
+      margin-top: 18px;
+      padding: 10px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--sage);
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+      min-height: 36px;
+    }
+    .status .dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--ink-mute);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .status.live .dot {
+      background: var(--rust);
+      animation: pulse 1.4s infinite ease-in-out;
+    }
+    .status.done .dot { background: var(--sage); }
+    .status.error { border-left-color: var(--crisis); }
+    .status.error .dot { background: var(--crisis); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Protocol progress rail */
+    .progress {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+    }
+    .progress h3 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin: 0 0 12px;
+      font-weight: 500;
+    }
+    .progress ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 13.5px;
+    }
+    .progress li {
+      padding: 6px 0 6px 22px;
+      position: relative;
+      color: var(--ink-mute);
+      border-left: 1px solid var(--rule);
+      margin-left: 5px;
+      transition: color 0.2s ease;
+    }
+    .progress li::before {
+      content: '';
+      position: absolute;
+      left: -4px; top: 12px;
+      width: 7px; height: 7px;
+      border: 1px solid var(--rule);
+      background: var(--paper-2);
+      border-radius: 50%;
+    }
+    .progress li.active { color: var(--ink); font-weight: 500; }
+    .progress li.active::before {
+      background: var(--rust);
+      border-color: var(--rust);
+      box-shadow: 0 0 0 3px rgba(176,75,26,0.18);
+    }
+    .progress li.done { color: var(--ink-soft); }
+    .progress li.done::before {
+      background: var(--sage);
+      border-color: var(--sage);
+    }
+
+    /* Save */
+    .save-row {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+    }
+    .save-btn {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+    .save-btn:hover:not(:disabled) {
+      background: var(--paper);
+      border-color: var(--sage);
+      color: var(--sage-deep);
+    }
+    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Main */
+    .header {
+      margin-bottom: 32px;
+      padding-bottom: 18px;
+      border-bottom: 2px solid var(--ink);
+    }
+    .header .eyebrow {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin: 0 0 6px;
+    }
+    .header h1 {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-style: italic;
+      font-size: 37px;
+      line-height: 1.05;
+      letter-spacing: -0.015em;
+      margin: 0;
+      color: var(--ink);
+    }
+    .header h1 .who { font-style: normal; color: var(--sage-deep); }
+    .header .meta {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-mute);
+      margin-top: 8px;
+    }
+
+    /* Empty state */
+    .empty {
+      margin-top: 80px;
+      text-align: left;
+      max-width: 540px;
+    }
+    .empty h2 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 29px;
+      color: var(--ink-soft);
+      line-height: 1.2;
+      margin: 0 0 12px;
+    }
+    .empty p {
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--ink-soft);
+      line-height: 1.55;
+    }
+    .empty code {
+      font-family: var(--mono);
+      background: var(--paper-2);
+      padding: 1px 6px;
+      border-radius: 2px;
+      font-size: 0.9em;
+      color: var(--rust);
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      border-left: 1px solid var(--rule);
+    }
+    .turn {
+      position: relative;
+      padding: 0 0 32px 0;
+      animation: arrive 0.4s ease both;
+    }
+    @keyframes arrive {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .turn::before {
+      content: '';
+      position: absolute;
+      left: -33px; top: 6px;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--paper);
+      border: 2px solid var(--sage);
+    }
+    .turn.kind-workflow::before { border-color: var(--sage-deep); }
+    .turn.kind-tool::before { border-color: var(--sage); }
+    .turn.kind-gallery::before { border-color: var(--gold); }
+    .turn.kind-elicit::before { border-color: var(--ink-mute); background: var(--paper-2); }
+    .turn.kind-results::before { border-color: var(--ink); background: var(--ink); }
+    .turn.kind-reaction::before { border-color: var(--rust); }
+    .turn.kind-ranking::before { border-color: var(--rust); background: var(--rust); }
+    .turn.kind-closing::before { border-color: var(--sage-deep); background: var(--sage-deep); }
+
+    .turn-head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.04em;
+    }
+    .turn-phase {
+      color: var(--ink-mute);
+      text-transform: uppercase;
+    }
+    .turn-tag {
+      padding: 1px 7px;
+      background: var(--paper-3);
+      border-radius: 2px;
+      color: var(--ink-soft);
+      font-size: 11px;
+    }
+    .turn-tag.modality-text { background: #d6e0d4; color: var(--sage-deep); }
+    .turn-tag.modality-image { background: #e7d3c0; color: var(--rust); }
+    .turn-tag.modality-spec { background: #ddd3bd; color: var(--ink); }
+    .turn-tag.abstain { background: var(--crisis); color: var(--paper); }
+
+    .turn-title {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 500;
+      margin: 4px 0 10px;
+      color: var(--ink);
+    }
+    .turn-prompt {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-mute);
+      background: var(--paper-2);
+      padding: 8px 12px;
+      border-left: 2px solid var(--rule);
+      margin: 0 0 12px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      max-height: 6.5em;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+    .turn-prompt::after {
+      content: '↓ click to expand';
+      position: absolute;
+      bottom: 0; right: 8px;
+      background: linear-gradient(90deg, transparent, var(--paper-2) 40%);
+      padding: 2px 0 2px 30px;
+      font-size: 11px;
+      color: var(--ink-mute);
+    }
+    .turn-prompt.expanded { max-height: none; }
+    .turn-prompt.expanded::after { display: none; }
+
+    .turn-response {
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.65;
+      color: var(--ink);
+      white-space: pre-wrap;
+    }
+    .turn-response.abstain {
+      font-style: italic;
+      color: var(--crisis);
+    }
+
+    /* Evidence pills */
+    .evidence {
+      margin-top: 14px;
+      padding: 18px 16px;
+      background: var(--paper-2);
+      border-radius: 2px;
+      border-left: 3px solid var(--gold);
+    }
+    .evidence-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 14px;
+    }
+    .evidence ul {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .evidence li {
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--ink-soft);
+    }
+    .evidence .who {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--rust);
+      margin-right: 8px;
+      font-weight: 500;
+    }
+    .evidence .codes {
+      display: block;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-mute);
+      margin-top: 6px;
+    }
+
+    /* Geranium results grid */
+    .results {
+      margin-top: 14px;
+    }
+    .results-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 10px;
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 8px;
+    }
+    .result-card {
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--paper);
+      padding: 10px;
+      overflow: hidden;
+    }
+    .result-card .thumb {
+      display: block;
+      width: 100%;
+      height: 110px;
+      object-fit: cover;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--paper-2);
+      margin-bottom: 8px;
+    }
+    .result-card .name {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--ink-soft);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 6px;
+    }
+    .result-card .desc {
+      font-family: var(--serif);
+      font-size: 13.5px;
+      color: var(--ink-mute);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Elicited queries pre-block */
+    .queries {
+      font-family: var(--mono);
+      font-size: 14.5px;
+      color: var(--ink);
+      background: var(--paper-2);
+      padding: 10px 12px;
+      border-radius: 2px;
+      border-left: 2px solid var(--ink-mute);
+    }
+    .queries div { margin: 2px 0; }
+    .queries .q-num { color: var(--ink-mute); margin-right: 8px; }
+
+    /* Ranking */
+    .ranking-block {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 8px 0 12px;
+    }
+    .rank-cell {
+      padding: 14px;
+      background: var(--paper-2);
+      border-radius: 2px;
+      text-align: center;
+    }
+    .rank-cell .label {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      margin-bottom: 6px;
+    }
+    .rank-cell .score {
+      font-family: var(--serif);
+      font-size: 37px;
+      font-weight: 500;
+      color: var(--rust);
+      line-height: 1;
+    }
+    .rank-cell.win .score { color: var(--sage-deep); }
+
+    /* Persona quick badge in header */
+    .persona-card {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--sage);
+      font-family: var(--mono);
+      font-size: 13.5px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+    }
+    .persona-card .group {
+      color: var(--sage-deep);
+      font-weight: 600;
+    }
+
+    /* Notice (info / error inline) */
+    .notice {
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      background: var(--paper-2);
+      border-left: 2px solid var(--rust);
+      color: var(--ink-soft);
+    }
+    .notice.error { border-left-color: var(--crisis); color: var(--crisis); }
+
+    /* Decorative noise overlay */
+    .grain {
+      position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85'/%3E%3CfeColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.15 0 0 0 0 0.11 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.06;
+      mix-blend-mode: multiply;
+    }
+  </style>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1 class="brand">Sycamore</h1>
+    <div class="brand-sub">synthetic persona session viewer</div>
+
+    <div class="field">
+      <label for="condition">Condition</label>
+      <select id="condition">
+        <option value="grounded">grounded (Interview Study)</option>
+        <option value="ungrounded">ungrounded (generic prior)</option>
+      </select>
+    </div>
+
+    <div class="field" id="abbr-field">
+      <label for="abbr">Persona</label>
+      <select id="abbr"></select>
+    </div>
+
+    <div class="field">
+      <label for="geranium-url">Geranium URL</label>
+      <input id="geranium-url" type="text" value="http://127.0.0.1:5001">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="qpm">Queries / modality</label>
+        <input id="qpm" type="number" min="1" max="6" value="2">
+      </div>
+      <div class="field">
+        <label for="topk">Top-k</label>
+        <input id="topk" type="number" min="1" max="24" value="5">
+      </div>
+    </div>
+
+    <button id="start-btn" class="start-btn">▶ Start session</button>
+    <div id="status" class="status"><span class="dot"></span><span id="status-text">idle</span></div>
+
+    <div class="progress">
+      <h3>Protocol</h3>
+      <ol id="phase-list">
+        <li data-phase="workflow">Workflow description</li>
+        <li data-phase="tool_description">Tool description</li>
+        <li data-phase="gallery">Gallery browsing</li>
+        <li data-phase="exploration:Text">Exploration · Text</li>
+        <li data-phase="exploration:Image">Exploration · Image</li>
+        <li data-phase="exploration:Spec">Exploration · Spec</li>
+        <li data-phase="modality_ranking">Modality ranking</li>
+        <li data-phase="closing">Closing summary</li>
+      </ol>
+    </div>
+
+    <div class="save-row">
+      <button id="save-btn" class="save-btn" disabled>Save transcript to disk</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="header">
+      <p class="eyebrow">Geranium user-study protocol · synthetic evaluator</p>
+      <h1 id="header-title" style="padding: .2em 0 0.1em 0">Watch a persona <span class="who">use Geranium</span></h1>
+<!--      <div class="meta" id="header-meta">Pick a condition and persona, point at your Geranium server, and start.</div>-->
+      <div id="persona-card" class="persona-card" style="display:none;"></div>
+    </header>
+
+    <div id="empty" class="empty">
+<!--      <h2>The runner streams turns as they happen.</h2>-->
+      <p>
+        Sycamore talks to the Geranium server over HTTP at
+        <code id="empty-url">http://127.0.0.1:5001</code>;
+        change the URL on the left if Geranium runs elsewhere or we want to
+        point at <code>scripts/mock_geranium.py</code> for a dry run.
+      </p>
+    </div>
+
+    <div id="timeline" class="timeline" style="display:none;"></div>
+  </main>
+</div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+  let evaluators = null;
+  let currentRecord = null;
+  let currentEventSource = null;
+
+  // ── Init ────────────────────────────────────────────────────────────── //
+
+  async function init() {
+    try {
+      const resp = await fetch('/api/evaluators');
+      evaluators = await resp.json();
+    } catch (e) {
+      setStatus('error', `cannot reach Sycamore API: ${e.message}`);
+      return;
+    }
+    refreshAbbrs();
+    $('#condition').addEventListener('change', refreshAbbrs);
+    $('#geranium-url').addEventListener('input', () => {
+      $('#empty-url').textContent = $('#geranium-url').value;
+    });
+    $('#start-btn').addEventListener('click', toggleSession);
+    $('#save-btn').addEventListener('click', saveSession);
+  }
+
+  function refreshAbbrs() {
+    const cond = $('#condition').value;
+    const sel = $('#abbr');
+    sel.innerHTML = '';
+    if (cond === 'grounded') {
+      $('#abbr-field').style.display = '';
+      for (const ev of evaluators.grounded) {
+        const opt = document.createElement('option');
+        opt.value = ev.abbr;
+        opt.textContent = `${ev.abbr} — ${ev.label}`;
+        sel.appendChild(opt);
+      }
+    } else {
+      $('#abbr-field').style.display = 'none';
+    }
+  }
+
+  // ── Session control ────────────────────────────────────────────────── //
+
+  function toggleSession() {
+    if (currentEventSource) {
+      currentEventSource.close();
+      currentEventSource = null;
+      $('#start-btn').textContent = '▶ Start session';
+      $('#start-btn').classList.remove('stop');
+      setStatus('idle', 'session stopped');
+      return;
+    }
+    startSession();
+  }
+
+  function startSession() {
+    // Reset state
+    currentRecord = null;
+    $('#timeline').innerHTML = '';
+    $('#timeline').style.display = '';
+    $('#empty').style.display = 'none';
+    $('#save-btn').disabled = true;
+    $$('#phase-list li').forEach(li => li.classList.remove('active', 'done'));
+
+    const params = new URLSearchParams({
+      condition: $('#condition').value,
+      geranium_url: $('#geranium-url').value,
+      queries_per_modality: $('#qpm').value,
+      k: $('#topk').value,
+    });
+    if ($('#condition').value === 'grounded') {
+      params.set('abbr', $('#abbr').value);
+    }
+
+    $('#start-btn').textContent = '■ Stop';
+    $('#start-btn').classList.add('stop');
+    setStatus('live', 'connecting…');
+
+    const url = `/api/sessions/stream?${params}`;
+    const es = new EventSource(url);
+    currentEventSource = es;
+
+    es.onmessage = (msg) => {
+      let evt;
+      try {
+        evt = JSON.parse(msg.data);
+      } catch (e) {
+        console.error('bad SSE payload', msg.data);
+        return;
+      }
+      handleEvent(evt);
+    };
+    es.onerror = (e) => {
+      if (currentEventSource) {
+        setStatus('error', 'connection error');
+        currentEventSource.close();
+        currentEventSource = null;
+        $('#start-btn').textContent = '▶ Start session';
+        $('#start-btn').classList.remove('stop');
+      }
+    };
+  }
+
+  function endSession(state, text) {
+    if (currentEventSource) {
+      currentEventSource.close();
+      currentEventSource = null;
+    }
+    $('#start-btn').textContent = '▶ Start session';
+    $('#start-btn').classList.remove('stop');
+    setStatus(state, text);
+  }
+
+  function setStatus(cls, text) {
+    const el = $('#status');
+    el.classList.remove('live', 'done', 'error');
+    if (cls !== 'idle') el.classList.add(cls);
+    $('#status-text').textContent = text;
+  }
+
+  // ── Event handling ─────────────────────────────────────────────────── //
+
+  function handleEvent(evt) {
+    switch (evt.type) {
+      case 'stream_start':
+        setStatus('live', `session ${evt.session_id} starting`);
+        return;
+      case 'info':
+        setStatus('live', evt.message);
+        return;
+      case 'turn':
+        renderTurn(evt);
+        markPhase(evt.phase, 'active');
+        // mark prior phases done
+        markPriorPhasesDone(evt.phase);
+        return;
+      case 'gallery':
+        renderGallery(evt);
+        markPhase('gallery', 'active');
+        return;
+      case 'queries_elicited':
+        renderQueriesElicited(evt);
+        markPhase(`exploration:${evt.modality}`, 'active');
+        return;
+      case 'query_issued':
+        // visualised below the elicit block; nothing extra to render here
+        return;
+      case 'query_results':
+        renderQueryResults(evt);
+        return;
+      case 'modality_rank':
+        renderModalityRanking(evt);
+        markPhase('modality_ranking', 'active');
+        return;
+      case 'error':
+        addNotice('error', `${evt.phase}: ${evt.error}`);
+        return;
+      case 'fatal_error':
+        addNotice('error', `fatal: ${evt.error}`);
+        endSession('error', `error: ${evt.error}`);
+        return;
+      case 'done':
+        currentRecord = evt.record;
+        markAllPhasesDone();
+        $('#save-btn').disabled = false;
+        endSession('done', `done — ${currentRecord.evaluator_id}`);
+        return;
+      default:
+        console.warn('unknown event type', evt);
+    }
+  }
+
+  // ── Renderers ───────────────────────────────────────────────────────── //
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function append(turn) {
+    $('#timeline').appendChild(turn);
+    turn.scrollIntoView({behavior: 'smooth', block: 'end'});
+  }
+
+  function kindForPhase(phase) {
+    if (phase === 'workflow') return 'kind-workflow';
+    if (phase === 'tool_description') return 'kind-tool';
+    if (phase === 'gallery') return 'kind-gallery';
+    if (phase === 'modality_ranking') return 'kind-ranking';
+    if (phase === 'closing') return 'kind-closing';
+    if (phase.startsWith('query_gen')) return 'kind-elicit';
+    if (phase.startsWith('exploration')) return 'kind-reaction';
+    return '';
+  }
+
+  function titleForPhase(phase, modality) {
+    if (phase === 'workflow') return 'Part 1 · Describe your workflow';
+    if (phase === 'tool_description') return 'Part 2 · React to the tool description';
+    if (phase === 'gallery') return 'Browse the gallery';
+    if (phase === 'modality_ranking') return 'Rank the three modalities';
+    if (phase === 'closing') return 'Closing assessment';
+    if (phase.startsWith('query_gen:')) {
+      const m = phase.split(':')[1];
+      return `Part 3 · Generate ${m} queries`;
+    }
+    if (phase.startsWith('exploration:')) {
+      return `Reaction · ${modality || phase.split(':')[1]}`;
+    }
+    return phase;
+  }
+
+  function renderTurn(evt) {
+    // Skip query_gen turns — they're shown as "queries elicited" instead
+    if (evt.phase.startsWith('query_gen')) return;
+
+    const turn = el('div', `turn ${kindForPhase(evt.phase)}`);
+    const head = el('div', 'turn-head');
+    head.appendChild(el('span', 'turn-phase', evt.phase));
+    if (evt.modality) {
+      head.appendChild(el('span', `turn-tag modality-${evt.modality.toLowerCase()}`, evt.modality));
+    }
+    if (evt.abstained) {
+      head.appendChild(el('span', 'turn-tag abstain', 'ABSTAINED'));
+    }
+    turn.appendChild(head);
+
+    turn.appendChild(el('div', 'turn-title', titleForPhase(evt.phase, evt.modality)));
+
+    const prompt = el('pre', 'turn-prompt', evt.prompt);
+    prompt.addEventListener('click', () => prompt.classList.toggle('expanded'));
+    turn.appendChild(prompt);
+
+    const resp = el('div', 'turn-response' + (evt.abstained ? ' abstain' : ''),
+            evt.response);
+    turn.appendChild(resp);
+
+    if (evt.evidence && evt.evidence.length) {
+      const ev = el('div', 'evidence');
+      ev.appendChild(el('div', 'evidence-head',
+              `evidence · ${evt.evidence.length} excerpt${evt.evidence.length > 1 ? 's' : ''}`));
+      const ul = el('ul');
+      for (const e of evt.evidence) {
+        const li = el('li');
+        const w = el('span', 'who', e.participant);
+        li.appendChild(w);
+        const q = document.createTextNode(`"${e.quotation}"`);
+        li.appendChild(q);
+        if (e.codes && e.codes.length) {
+          li.appendChild(el('span', 'codes', e.codes.slice(0, 3).join(' · ')));
+        }
+        ul.appendChild(li);
+      }
+      ev.appendChild(ul);
+      turn.appendChild(ev);
+    }
+
+    append(turn);
+  }
+
+  // Add a thumbnail <img> to a card. Tries (in order): inline base64 if the
+  // event carried it (mock server), then /imgs/<name> if name has an image
+  // extension, then /imgs/<name>.png as a final guess. Hides the img cleanly
+  // on 404 so cards without an image still look fine.
+  function addThumbnail(card, item) {
+    let src = null;
+    if (item.image_b64) {
+      src = 'data:image/png;base64,' + item.image_b64;
+    } else if (item.name && /\.(png|jpe?g|gif|webp|svg)$/i.test(item.name)) {
+      src = '/imgs/' + encodeURIComponent(item.name);
+    } else if (item.name) {
+      src = '/imgs/' + encodeURIComponent(item.name) + '.png';
+    }
+    if (!src) return;
+    const img = document.createElement('img');
+    img.className = 'thumb';
+    img.src = src;
+    img.alt = item.name || 'item';
+    img.loading = 'lazy';
+    img.onerror = () => { img.style.display = 'none'; };
+    card.appendChild(img);
+  }
+
+  function renderGallery(evt) {
+    const turn = el('div', 'turn kind-gallery');
+    turn.appendChild(el('div', 'turn-head').appendChild(
+            el('span', 'turn-phase', `gallery · ${evt.n_items} items shown`)).parentElement);
+    turn.appendChild(el('div', 'turn-title', 'Gallery (representative charts)'));
+    const grid = el('div', 'results');
+    grid.appendChild(el('div', 'results-head', 'gallery items'));
+    const inner = el('div', 'results-grid');
+    for (const it of evt.items) {
+      const card = el('div', 'result-card');
+      addThumbnail(card, it);
+      card.appendChild(el('div', 'name', it.name));
+      const fullDesc = it.text || '(no description)';
+      const snippet = fullDesc.length > 180 ? fullDesc.slice(0, 177) + '…' : fullDesc;
+      const descEl = el('div', 'desc', snippet);
+      descEl.title = fullDesc;
+      card.appendChild(descEl);
+      inner.appendChild(card);
+    }
+    grid.appendChild(inner);
+    turn.appendChild(grid);
+    append(turn);
+  }
+
+  function renderQueriesElicited(evt) {
+    const turn = el('div', 'turn kind-elicit');
+    const head = el('div', 'turn-head');
+    head.appendChild(el('span', 'turn-phase', `elicited · ${evt.modality}`));
+    head.appendChild(el('span', `turn-tag modality-${evt.modality.toLowerCase()}`, evt.modality));
+    turn.appendChild(head);
+    turn.appendChild(el('div', 'turn-title',
+            `Persona produced ${evt.queries.length} ${evt.modality} ${evt.queries.length > 1 ? 'queries' : 'query'}`));
+    const block = el('div', 'queries');
+    evt.queries.forEach((q, i) => {
+      const line = el('div');
+      line.appendChild(el('span', 'q-num', `${i + 1}.`));
+      line.appendChild(document.createTextNode(q));
+      block.appendChild(line);
+    });
+    turn.appendChild(block);
+    append(turn);
+  }
+
+  function renderQueryResults(evt) {
+    const turn = el('div', 'turn kind-results');
+    const head = el('div', 'turn-head');
+    head.appendChild(el('span', 'turn-phase',
+            `geranium · top ${evt.n_results}`));
+    head.appendChild(el('span', `turn-tag modality-${evt.modality.toLowerCase()}`, evt.modality));
+    turn.appendChild(head);
+    turn.appendChild(el('div', 'turn-title', `Geranium results · "${evt.query_text}"`));
+    if (!evt.results || !evt.results.length) {
+      turn.appendChild(el('div', 'notice', 'no results returned'));
+    } else {
+      const wrap = el('div', 'results');
+      const grid = el('div', 'results-grid');
+      for (const r of evt.results) {
+        const card = el('div', 'result-card');
+        addThumbnail(card, r);
+        card.appendChild(el('div', 'name', r.name));
+        const fullDesc = r.text || '(no description)';
+        const snippet = fullDesc.length > 180 ? fullDesc.slice(0, 177) + '…' : fullDesc;
+        const descEl = el('div', 'desc', snippet);
+        descEl.title = fullDesc;
+        card.appendChild(descEl);
+        grid.appendChild(card);
+      }
+      wrap.appendChild(grid);
+      turn.appendChild(wrap);
+    }
+    append(turn);
+  }
+
+  function renderModalityRanking(evt) {
+    if (!evt.ranking) return;
+    const turn = el('div', 'turn kind-ranking');
+    const head = el('div', 'turn-head');
+    head.appendChild(el('span', 'turn-phase', 'modality_ranking'));
+    turn.appendChild(head);
+    turn.appendChild(el('div', 'turn-title', 'Modality preference (3 = most preferred)'));
+    const block = el('div', 'ranking-block');
+    const max = Math.max(...Object.values(evt.ranking));
+    for (const m of ['Text', 'Image', 'Spec']) {
+      const cell = el('div', 'rank-cell' + (evt.ranking[m] === max ? ' win' : ''));
+      cell.appendChild(el('div', 'label', m));
+      cell.appendChild(el('div', 'score', String(evt.ranking[m])));
+      block.appendChild(cell);
+    }
+    turn.appendChild(block);
+    if (evt.rationale) {
+      const note = el('div', 'turn-response');
+      note.textContent = evt.rationale;
+      turn.appendChild(note);
+    }
+    append(turn);
+  }
+
+  function addNotice(cls, text) {
+    const n = el('div', `notice ${cls === 'error' ? 'error' : ''}`, text);
+    $('#timeline').appendChild(n);
+  }
+
+  // ── Phase progress ─────────────────────────────────────────────────── //
+
+  const PHASE_ORDER = [
+    'workflow', 'tool_description', 'gallery',
+    'exploration:Text', 'exploration:Image', 'exploration:Spec',
+    'modality_ranking', 'closing',
+  ];
+
+  function phaseKeyOf(phase) {
+    if (phase.startsWith('exploration:')) {
+      const parts = phase.split(':');
+      return `exploration:${parts[1]}`;
+    }
+    if (phase.startsWith('query_gen:')) {
+      return `exploration:${phase.split(':')[1]}`;
+    }
+    return phase;
+  }
+
+  function markPhase(phase, cls) {
+    const key = phaseKeyOf(phase);
+    const li = $$('#phase-list li').find(li => li.dataset.phase === key);
+    if (li) {
+      $$('#phase-list li').forEach(other => other.classList.remove('active'));
+      li.classList.add(cls);
+    }
+  }
+
+  function markPriorPhasesDone(currentPhase) {
+    const key = phaseKeyOf(currentPhase);
+    const idx = PHASE_ORDER.indexOf(key);
+    if (idx < 0) return;
+    $$('#phase-list li').forEach(li => {
+      const i = PHASE_ORDER.indexOf(li.dataset.phase);
+      if (i >= 0 && i < idx) li.classList.add('done');
+    });
+  }
+
+  function markAllPhasesDone() {
+    $$('#phase-list li').forEach(li => {
+      li.classList.remove('active');
+      li.classList.add('done');
+    });
+  }
+
+  // ── Save ─────────────────────────────────────────────────────────────── //
+
+  async function saveSession() {
+    if (!currentRecord) return;
+    $('#save-btn').disabled = true;
+    $('#save-btn').textContent = 'Saving…';
+    try {
+      const resp = await fetch('/api/sessions/save', {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({record: currentRecord}),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const data = await resp.json();
+      $('#save-btn').textContent = `✓ saved · ${Object.values(data.saved)[0]}`;
+    } catch (e) {
+      $('#save-btn').textContent = `error: ${e.message}`;
+    } finally {
+      setTimeout(() => {
+        $('#save-btn').textContent = 'Save transcript to disk';
+        $('#save-btn').disabled = false;
+      }, 4000);
+    }
+  }
+
+  // ── Boot ─────────────────────────────────────────────────────────────── //
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Persona Interview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Sans 3', 'Source Sans Pro', 'Avenir Next', 'Avenir', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 16px;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    #sidebar h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-group label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #666;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    /* ── Evaluator cards ── */
+    #evaluator-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .ev-card {
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-left: 3px solid transparent;
+      border-radius: 7px;
+      cursor: pointer;
+      background: #fff;
+      transition: background 0.12s, opacity 0.12s;
+    }
+
+    .ev-card:not(.selected):hover { opacity: 0.8; }
+    .ev-card.selected { box-shadow: 0 0 0 1px rgba(0,0,0,0.08); }
+
+    .ev-card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+
+    .ev-card-variant {
+      font-size: 11px;
+      color: #555;
+      margin-top: 1px;
+    }
+
+    .ev-card-group {
+      font-size: 10px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .range-row input { flex: 1; }
+    .range-val { font-size: 13px; font-weight: 600; min-width: 18px; text-align: right; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-row input[type="checkbox"] { cursor: pointer; }
+    .toggle-row span { font-size: 13px; }
+
+    #clear-btn {
+      margin-top: auto;
+      padding: 8px 12px;
+      background: #f0f0f0;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+    }
+    #clear-btn:hover { background: #e4e4e4; }
+
+    /* ── Main ── */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    #chat-header {
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    #chat-header strong { color: #1a1a1a; }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 8px;
+      max-width: 78%;
+    }
+
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.assistant { align-self: flex-start; }
+    .msg.error { align-self: flex-start; }
+
+    .msg-body {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .avatar-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.user .bubble {
+      background: #e4e4e7;
+      color: #18181b;
+      border-bottom-right-radius: 3px;
+    }
+
+    .msg.assistant .bubble {
+      border: 1px solid #e0e0e0;
+      border-bottom-left-radius: 3px;
+    }
+
+    .msg.error .bubble {
+      background: #fff0f0;
+      border: 1px solid #f5c0c0;
+      color: #b00;
+      border-bottom-left-radius: 3px;
+    }
+
+    /* Evidence expander */
+    details.evidence {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #555;
+      max-width: 520px;
+    }
+
+    details.evidence summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #18181b;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    details.evidence summary::before {
+      content: "▶";
+      font-size: 9px;
+      transition: transform 0.15s;
+    }
+
+    details[open].evidence summary::before { transform: rotate(90deg); }
+
+    .quote-item {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #f8f8f8;
+      border-left: 3px solid #d0d0d0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .quote-meta {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 3px;
+    }
+
+    .quote-codes {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .quote-text {
+      color: #444;
+      line-height: 1.45;
+    }
+
+    /* Thinking indicator */
+    .thinking {
+      display: flex;
+      gap: 4px;
+      padding: 10px 14px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      border-bottom-left-radius: 3px;
+    }
+
+    .thinking span {
+      width: 7px; height: 7px;
+      background: #aaa;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .thinking span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-5px); }
+    }
+
+    /* ── Input bar ── */
+    #input-bar {
+      padding: 14px 80px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #question-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      max-height: 120px;
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+
+    #question-input:focus { outline: 2px solid #18181b; outline-offset: 1px; border-color: transparent; }
+
+    #send-btn {
+      padding: 10px 18px;
+      background: #18181b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #send-btn:hover:not(:disabled) { background: #3f3f46; }
+    #send-btn:disabled { background: #a1a1aa; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <h1>Persona Interview</h1>
+
+  <div class="control-group">
+    <label>Evaluator</label>
+    <div id="evaluator-list"></div>
+  </div>
+
+  <div class="control-group">
+    <label for="provider-select">LLM Provider</label>
+    <select id="provider-select">
+      <option value="openai" selected>OpenAI</option>
+      <option value="anthropic">Anthropic</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label for="k-range">Evidence quotes per question</label>
+    <div style="position:relative;">
+      <input type="range" id="k-range" min="0" max="15" value="5" style="width:100%">
+      <span id="k-val" style="position:absolute; top:18px; transform:translateX(-50%); font-size:11px; font-weight:600; color:#1a1a1a; pointer-events:none;">5</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:11px; color:#999; margin-top:18px;">
+      <span>0</span><span>15</span>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <label class="toggle-row">
+      <input type="checkbox" id="show-evidence" checked>
+      <span>Show retrieved quotes</span>
+    </label>
+  </div>
+
+  <button id="clear-btn">Clear conversation</button>
+</aside>
+
+<main id="main">
+  <div id="chat-header">
+    Evaluator: <strong id="header-persona">—</strong> &nbsp;·&nbsp; Model: <span id="header-provider">—</span>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="input-bar">
+    <textarea id="question-input" rows="1" placeholder="Ask a question…"></textarea>
+    <button id="send-btn">Send</button>
+  </div>
+</main>
+
+<script>
+  const evaluatorList  = document.getElementById("evaluator-list");
+  const providerSelect = document.getElementById("provider-select");
+  const kRange         = document.getElementById("k-range");
+  const kVal           = document.getElementById("k-val");
+  const showEvidence   = document.getElementById("show-evidence");
+  const clearBtn       = document.getElementById("clear-btn");
+  const messagesEl     = document.getElementById("messages");
+  const inputEl        = document.getElementById("question-input");
+  const sendBtn        = document.getElementById("send-btn");
+  const headerPersona  = document.getElementById("header-persona");
+  const headerProvider = document.getElementById("header-provider");
+
+  let selectedEvaluatorId = null;
+  let selectedAccentColor = null;
+  let selectedBaseColor = null;
+  let selectedAbbr = null;
+  let history = [];
+
+  const NOMINAL_COLORS = ['#E79F00','#029F73','#0072B2','#CB7AA7','#D45E00','#57B4E9','#EFE441'];
+
+  function hexBlend(hex, t) {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgb(${Math.round(r+(255-r)*t)},${Math.round(g+(255-g)*t)},${Math.round(b+(255-b)*t)})`;
+  }
+
+  // ── Populate evaluator cards ──
+  fetch("/api/evaluators")
+          .then(r => r.json())
+          .then(evaluators => {
+            const nameCounts = {}, nameIndex = {}, groupColorIdx = {};
+            let colorCounter = 0;
+            evaluators.forEach(ev => {
+              const name = ev.label.split(" — ")[0];
+              nameCounts[name] = (nameCounts[name] || 0) + 1;
+              if (!(ev.group in groupColorIdx)) groupColorIdx[ev.group] = colorCounter++ % NOMINAL_COLORS.length;
+            });
+
+            evaluators.forEach((ev, i) => {
+              const [name, variant] = ev.label.split(" — ");
+              nameIndex[name] = (nameIndex[name] || 0) + 1;
+              const displayName = nameCounts[name] > 1 ? `${name} ${nameIndex[name]}` : name;
+
+              const base = NOMINAL_COLORS[groupColorIdx[ev.group]];
+              const accentColor = base;
+              const bgNormal    = hexBlend(base, 0.92);
+              const bgSelected  = hexBlend(base, 0.78);
+
+              const card = document.createElement("div");
+              card.className = "ev-card";
+              card.dataset.id = ev.id;
+              card.dataset.accentColor  = accentColor;
+              card.dataset.baseColor    = base;
+              card.dataset.bgNormal     = bgNormal;
+              card.dataset.bgSelected   = bgSelected;
+              card.style.borderLeftColor = accentColor;
+              card.style.background      = bgNormal;
+              card.dataset.abbr = ev.abbr;
+              card.innerHTML =
+                      `<div class="ev-card-name">${esc(displayName)}</div>` +
+                      (variant ? `<div class="ev-card-variant">${esc(variant)}</div>` : "") +
+                      `<div class="ev-card-group">${esc(ev.group)}</div>`;
+              card.addEventListener("click", () => selectEvaluator(ev.id, ev.label));
+              evaluatorList.appendChild(card);
+            });
+            if (evaluators.length) selectEvaluator(evaluators[0].id, evaluators[0].label);
+          });
+
+  function selectEvaluator(id, label) {
+    selectedEvaluatorId = id;
+    document.querySelectorAll(".ev-card").forEach(c => {
+      const isSelected = c.dataset.id === id;
+      c.classList.toggle("selected", isSelected);
+      c.style.background = isSelected ? c.dataset.bgSelected : c.dataset.bgNormal;
+      c.style.borderColor = isSelected ? c.dataset.accentColor : '#e0e0e0';
+      c.style.borderLeftColor = c.dataset.accentColor;
+      c.style.boxShadow = isSelected ? `0 0 0 1.5px ${c.dataset.accentColor}` : 'none';
+      c.style.filter = isSelected ? 'none' : 'opacity(0.5)';
+      if (isSelected) {
+        selectedAccentColor = c.dataset.bgSelected;
+        selectedBaseColor   = c.dataset.accentColor;
+        selectedAbbr = c.dataset.abbr;
+      }
+    });
+    clearConversation();
+    headerPersona.textContent = label;
+    updateProviderHeader();
+  }
+
+  // ── Evidence k slider ──
+  function updateKLabel() {
+    const min = +kRange.min, max = +kRange.max, val = +kRange.value;
+    const thumbW = 16;
+    const frac = (val - min) / (max - min);
+    const px = frac * (kRange.offsetWidth - thumbW) + thumbW / 2;
+    kVal.textContent = val;
+    kVal.style.left = px + "px";
+  }
+  kRange.addEventListener("input", updateKLabel);
+  window.addEventListener("load", updateKLabel);
+
+  providerSelect.addEventListener("change", () => { clearConversation(); updateProviderHeader(); });
+
+  function updateProviderHeader() {
+    fetch(`/api/info?provider=${encodeURIComponent(providerSelect.value)}`)
+            .then(r => r.json())
+            .then(d => { headerProvider.textContent = d.provider || "—"; })
+            .catch(() => { headerProvider.textContent = providerSelect.value || "—"; });
+  }
+
+  function clearConversation() {
+    history = [];
+    messagesEl.innerHTML = "";
+  }
+
+  clearBtn.addEventListener("click", clearConversation);
+
+  // ── Auto-resize textarea ──
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+  });
+
+  // ── Send on Enter (Shift+Enter for newline) ──
+  inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  sendBtn.addEventListener("click", sendMessage);
+
+  // ── Send ──
+  async function sendMessage() {
+    const question = inputEl.value.trim();
+    if (!question) return;
+
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    sendBtn.disabled = true;
+
+    appendMessage("user", question);
+    history.push({ role: "user", content: question });
+
+    const thinkingEl = appendThinking();
+    let assistantMsgEl = null;
+    let assistantBubble = null;
+    let fullAnswer = "";
+    let quotesData = null;
+    let settled = false;
+
+    function settle() {
+      if (!settled) { settled = true; thinkingEl.remove(); }
+    }
+
+    try {
+      const res = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          evaluator_id: selectedEvaluatorId,
+          provider:     providerSelect.value,
+          question,
+          history:      history.slice(0, -1),
+          k:            parseInt(kRange.value, 10),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        settle();
+        appendMessage("error", data.detail || `Server error ${res.status}`);
+        sendBtn.disabled = false;
+        inputEl.focus();
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop();
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          let event;
+          try { event = JSON.parse(part.slice(6)); } catch { continue; }
+
+          if (event.type === "abstain") {
+            settle();
+            appendMessage("assistant", event.answer);
+            history.push({ role: "assistant", content: event.answer });
+
+          } else if (event.type === "quotes") {
+            quotesData = event.quotes;
+
+          } else if (event.type === "token") {
+            if (!assistantBubble) {
+              settle();
+              assistantMsgEl = document.createElement("div");
+              assistantMsgEl.className = "msg assistant";
+              const circle = document.createElement("div");
+              circle.className = "avatar-circle";
+              circle.textContent = selectedAbbr || "";
+              if (selectedBaseColor) circle.style.background = selectedBaseColor;
+              assistantMsgEl.appendChild(circle);
+              const body = document.createElement("div");
+              body.className = "msg-body";
+              assistantBubble = document.createElement("div");
+              assistantBubble.className = "bubble";
+              if (selectedAccentColor) assistantBubble.style.background = selectedAccentColor;
+              body.appendChild(assistantBubble);
+              assistantMsgEl.appendChild(body);
+              assistantMsgEl._body = body;
+              messagesEl.appendChild(assistantMsgEl);
+            }
+            fullAnswer += event.text;
+            assistantBubble.textContent = fullAnswer;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+          } else if (event.type === "done") {
+            if (quotesData && assistantMsgEl && assistantMsgEl._body) {
+              const det = buildEvidenceEl(quotesData);
+              det.style.display = showEvidence.checked ? "" : "none";
+              assistantMsgEl._evidenceEl = det;
+              assistantMsgEl._body.appendChild(det);
+            }
+            history.push({ role: "assistant", content: fullAnswer });
+
+          } else if (event.type === "error") {
+            settle();
+            appendMessage("error", event.detail || "Unknown server error");
+          }
+        }
+      }
+    } catch (err) {
+      settle();
+      appendMessage("error", `Network error: ${err.message}`);
+    }
+
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+
+  // ── Render helpers ──
+  function appendMessage(role, content, quotes) {
+    const msg = document.createElement("div");
+    msg.className = `msg ${role}`;
+
+    const circle = document.createElement("div");
+    circle.className = "avatar-circle";
+    if (role === "assistant") {
+      circle.textContent = selectedAbbr || "";
+      if (selectedBaseColor) circle.style.background = selectedBaseColor;
+    } else {
+      circle.textContent = "You";
+      circle.style.background = "#71717a";
+      circle.style.fontSize = "7px";
+    }
+    msg.appendChild(circle);
+
+    const body = document.createElement("div");
+    body.className = "msg-body";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = content;
+    if (role === "assistant" && selectedAccentColor) bubble.style.background = selectedAccentColor;
+    body.appendChild(bubble);
+
+    if (role === "assistant" && quotes && quotes.length > 0) {
+      const det = buildEvidenceEl(quotes);
+      det.style.display = showEvidence.checked ? "" : "none";
+      body.appendChild(det);
+      msg._evidenceEl = det;
+    }
+
+    msg.appendChild(body);
+    messagesEl.appendChild(msg);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return msg;
+  }
+
+  function appendThinking() {
+    const msg = document.createElement("div");
+    msg.className = "msg assistant";
+    const circle = document.createElement("div");
+    circle.className = "avatar-circle";
+    circle.textContent = selectedAbbr || "";
+    if (selectedBaseColor) circle.style.background = selectedBaseColor;
+    msg.appendChild(circle);
+    const body = document.createElement("div");
+    body.className = "msg-body";
+    body.innerHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
+    msg.appendChild(body);
+    messagesEl.appendChild(msg);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return msg;
+  }
+
+  function buildEvidenceEl(quotes) {
+    const det = document.createElement("details");
+    det.className = "evidence";
+    const sum = document.createElement("summary");
+    sum.textContent = `Retrieved quotes (${quotes.length}) — sources cited in response`;
+    det.appendChild(sum);
+
+    quotes.forEach(q => {
+      const item = document.createElement("div");
+      item.className = "quote-item";
+      const codes = (q.codes || []).slice(0, 3).join(" · ");
+      item.innerHTML =
+              `<div class="quote-meta">${esc(q.participant)}</div>` +
+              `<div class="quote-codes">${esc(codes)}</div>` +
+              `<div class="quote-text">${esc((q.quotation || "").slice(0, 300))}</div>`;
+      det.appendChild(item);
+    });
+
+    return det;
+  }
+
+  function esc(str) {
+    return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+  }
+
+  // ── Sync evidence visibility when toggle changes ──
+  showEvidence.addEventListener("change", () => {
+    document.querySelectorAll(".msg.assistant").forEach(msg => {
+      if (msg._evidenceEl) msg._evidenceEl.style.display = showEvidence.checked ? "" : "none";
+    });
+  });
+</script>
+</body>
+</html>

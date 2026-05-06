@@ -1,6 +1,6 @@
 # Sycamore
 
-<b>Sy</b>nthetic <b>C</b>h<b>a</b>racterization for Evaluating Geno<b>m</b>ics Visualizati<b>o</b>n <b>Re</b>trieval.
+_<b>Sy</b>nthetic <b>C</b>h<b>a</b>racterization for Evaluating Geno<b>m</b>ics Visualizati<b>o</b>n <b>Re</b>trieval._
 
 A three-condition probe of how synthetic personas evaluate the
 [Geranium](https://github.com/gosling-lang/geranium) retrieval system, built on
@@ -30,7 +30,7 @@ python app.py                                          # serves on http://localh
 
 Leave that running in its own terminal. Sycamore will issue search queries against it.
 
-## 📺 Live session viewer
+## Live session viewer 📺
 
 A streaming UI for watching one evaluator drive Geranium turn by turn:
 

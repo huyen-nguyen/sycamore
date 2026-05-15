@@ -9,10 +9,28 @@
   <i><b>Sy</b>nthetic <b>C</b>h<b>a</b>racterization for Evaluating Geno<b>m</b>ics Visualizati<b>o</b>n <b>Re</b>trieval</i>
 </p>
 
+## Citation
+
+Preprint: [Huyen N. Nguyen, Astrid van den Brandt and N. Gehlenborg, "Sycamore: Characterizing Synthetic Personas for Evaluating Genomics Visualization Retrieval," arXiv Preprint, doi: 10.48550/arXiv.2605.08630](https://arxiv.org/abs/2605.08630).
+
+```bib
+@article{nguyen2026sycamore,
+  author={Nguyen, Huyen N. and van den Brandt, Astrid and Gehlenborg, Nils},
+  journal={arXiv Preprint}, 
+  title={Sycamore: Characterizing Synthetic Personas for Evaluating Genomics Visualization Retrieval}, 
+  year={2026},
+  doi={10.48550/arXiv.2605.08630},
+  url={https://arxiv.org/abs/2605.08630}}
+```
+
 A three-condition probe of how synthetic personas evaluate the
 [Geranium](https://github.com/gosling-lang/geranium) retrieval system, built on
 top of a [persona-generator](./PERSONA_GENERATOR.md) engine that produces
 PersonaCite-grounded synthetic personas of genomics researchers.
+
+<img width="1175" height="529" alt="image" src="https://github.com/user-attachments/assets/ca8a0984-25ec-46de-a6a9-6b8e8613593b" />
+
+User interface below.
 
 ![img.png](media/interface.png)
 
@@ -108,26 +126,6 @@ python -m sycamore.cli run \
     [--only CB1,SE2]                 # restrict grounded run to specific abbrs
     [--out data/sycamore_outputs]
 ```
-
-## Tree layout
-
-````
-.
-├── personas.xlsx, coding_info/         # source artefacts (engine inputs)
-├── llm_provider.py, step1..step8       # persona-generator engine (unchanged)
-├── server.py, static/                  # engine reference chat UI
-├── data/                               # engine outputs (personas.json, evidence.json, ...)
-├── sycamore/                           # this layer
-│   ├── geranium_client.py              # Geranium HTTP client
-│   ├── evaluator/                      # base + grounded + ungrounded
-│   ├── conditions/                     # build_evaluators(condition, ...)
-│   ├── protocol/                       # 3-part runner + tool description
-│   ├── analysis/                       # rankings + theme alignment
-│   ├── interface/                      # FastAPI session driver
-│   └── cli.py                          # `python -m sycamore.cli run ...`
-└── scripts/mock_geranium.py            # canned-response Geranium for tests
-
-````
 
 ## Notes & limitations
 

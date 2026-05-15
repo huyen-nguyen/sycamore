@@ -1,6 +1,13 @@
 # Sycamore
 
-_<b>Sy</b>nthetic <b>C</b>h<b>a</b>racterization for Evaluating Geno<b>m</b>ics Visualizati<b>o</b>n <b>Re</b>trieval._
+<h1 align="center">
+  <img src="./assets/sycamore_tree.png" alt="geranium logo" width="120">
+  <br>Sycamore
+</h1>
+
+<p align="center">
+  <i><b>Sy</b>nthetic <b>C</b>h<b>a</b>racterization for Evaluating Geno<b>m</b>ics Visualizati<b>o</b>n <b>Re</b>trieval</i>
+</p>
 
 A three-condition probe of how synthetic personas evaluate the
 [Geranium](https://github.com/gosling-lang/geranium) retrieval system, built on

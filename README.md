@@ -30,7 +30,9 @@ PersonaCite-grounded synthetic personas of genomics researchers.
 
 <img width="1175" height="529" alt="image" src="https://github.com/user-attachments/assets/ca8a0984-25ec-46de-a6a9-6b8e8613593b" />
 
-User interface below.
+## Viewer
+
+User interface below. For an interactive demo, go to: https://www.youtube.com/watch?v=h_Qm7L_C4CA.
 
 ![img.png](media/interface.png)
 

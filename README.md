@@ -1,7 +1,7 @@
 # Sycamore
 
 <h1 align="center">
-  <img src="./assets/sycamore_tree.png" alt="geranium logo" width="120">
+  <img src="./assets/sycamore_tree.svg" alt="geranium logo" width="120">
   <br>Sycamore
 </h1>
 

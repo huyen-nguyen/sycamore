@@ -50,7 +50,7 @@ const CONFIG = {
     { name: "Nils Gehlenborg", aff: [1], website: "https://hidivelab.org/team/members/nils-gehlenborg/", scholar: "https://scholar.google.com/citations?user=YEcBVFAAAAAJ&hl=en"},
   ],
   affiliations: [
-    "Dept. of Biomedical Informatics, Harvard Medical School, Harvard University",   // 1
+    "Harvard Medical School, Harvard University",   // 1
   ],
 
   /* ---------- 3. LINKS  (leave "" to hide the button) --------- */

@@ -47,7 +47,7 @@ const CONFIG = {
   authors: [
     { name: "Huyen N. Nguyen",   aff: [1],    website: "https://huyennguyen.com/", scholar: "https://scholar.google.com/citations?user=tsrO-ZgAAAAJ&hl=en", orcid: "https://orcid.org/0000-0001-6554-2327" },
     { name: "Astrid van den Brandt",   aff: [1],    website: "https://hidivelab.org/team/members/astrid-vandenbrandt/", scholar: "", orcid: "" },
-    { name: "Nils Gehlenborg", aff: [1], website: "https://hidivelab.org/team/members/nils-gehlenborg/", scholar: "https://scholar.google.com/citations?user=YEcBVFAAAAAJ&hl=en"},
+    { name: "Nils Gehlenborg", aff: [1], website: "https://hidivelab.org/team/members/nils-gehlenborg/", scholar: "https://scholar.google.com/citations?user=YEcBVFAAAAAJ&hl=en", orcid: "https://orcid.org/0000-0003-0327-8297"},
   ],
   affiliations: [
     "Harvard Medical School, Harvard University",   // 1
